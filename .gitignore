@@ -1,0 +1,30 @@
+# ── 데이터 (구글 드라이브로 공유) ──
+# 깃은 파일의 모든 버전을 영원히 보관한다. 덤프를 열 번 갱신하면
+# 그 열 개가 저장소에 계속 남아 clone 할 때마다 따라온다.
+data/
+*.dump
+*.pbf
+*.shp
+*.shx
+*.dbf
+*.prj
+*.csv
+*.zip
+
+# ── 행정 서류 (개인정보 가능) ──
+*구매 신청서*
+*신청서*.hwpx
+
+# ── 작업 중 스크린샷 ──
+*.png
+*.jpg
+*.jpeg
+
+# ── OS · 편집기 ──
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+~$*
+*.tmp
