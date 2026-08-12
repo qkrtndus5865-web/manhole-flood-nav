@@ -47,6 +47,13 @@ CREATE OR REPLACE FUNCTION route_safe(
   w_manhole_each double precision DEFAULT 0.3,   -- 맨홀 1개당
   w_manhole_cap  double precision DEFAULT 1.5,   -- 맨홀 가중치 상한
 
+  -- 맨홀은 비의 세기에 비례해 위험해진다. 뚜껑이 수압에 밀려 열리는 것도,
+  -- 열린 구멍이 흙탕물에 가려 안 보이는 것도 강우 강도를 따라간다.
+  -- 평상시에는 뚜껑이 눈에 보여 사람이 알아서 피할 수 있으므로 0으로 끈다.
+  -- 호우주의보를 1.0 기준으로 두고 배수를 매긴다.
+  m_warn         double precision DEFAULT 1.5,   -- 호우경보(100)
+  m_extreme      double precision DEFAULT 2.0,   -- 극한호우(9999)
+
   -- bbox 여유 (도 단위). 시청→강남역(9.4km) 실측:
   --   제한 없음(39만 엣지) 1334ms / 0.03 → 348ms / 0.015 → 103ms. 경로 결과는 셋 다 동일.
   -- ponytail: 고정값. 장거리에서 우회로를 놓치면 거리 비례로 키울 것.
@@ -74,9 +81,13 @@ DECLARE
            WHEN r.min_freq <= 100 THEN %4$s
            WHEN r.min_freq <= 200 THEN %5$s
            ELSE %6$s END
-    + CASE WHEN %1$s > 0
-           THEN LEAST(%7$s * COALESCE(r.manhole_count, 0), %8$s) ELSE 0 END)$w$,
-    alert_freq, w30, w50, w100, w200, w_else, w_manhole_each, w_manhole_cap);
+    + LEAST(%7$s * COALESCE(r.manhole_count, 0), %8$s)
+      * CASE WHEN %1$s = 0    THEN 0      -- 평상시엔 뚜껑이 보이니 사람이 피한다
+             WHEN %1$s <=  50 THEN 1.0    -- 호우주의보 (기준)
+             WHEN %1$s <= 100 THEN %9$s   -- 호우경보
+             ELSE %10$s END)$w$,          -- 극한호우
+    alert_freq, w30, w50, w100, w200, w_else, w_manhole_each, w_manhole_cap,
+    m_warn, m_extreme);
   edge_sql text;
 BEGIN
   -- 출발·도착을 감싸는 사각형만 그래프로 넘긴다. 서울 전체 39만 엣지를 다 읽으면 느리다.
@@ -110,7 +121,9 @@ CREATE OR REPLACE FUNCTION route_summary(
   w100 double precision DEFAULT 2.0, w200 double precision DEFAULT 1.0,
   w_else double precision DEFAULT 0.5,
   w_manhole_each double precision DEFAULT 0.3,
-  w_manhole_cap  double precision DEFAULT 1.5
+  w_manhole_cap  double precision DEFAULT 1.5,
+  m_warn         double precision DEFAULT 1.5,
+  m_extreme      double precision DEFAULT 2.0
 )
 RETURNS TABLE (
   distance_m    numeric,
@@ -122,7 +135,7 @@ LANGUAGE sql STABLE AS $$
   WITH r AS (
     SELECT * FROM route_safe(lon1, lat1, lon2, lat2, alert_freq,
                              w30, w50, w100, w200, w_else,
-                             w_manhole_each, w_manhole_cap)
+                             w_manhole_each, w_manhole_cap, m_warn, m_extreme)
   )
   SELECT round(sum(length_m)::numeric),
          COALESCE(round(sum(length_m) FILTER (WHERE risk_weight > 0)::numeric), 0),
