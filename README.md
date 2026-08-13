@@ -90,6 +90,7 @@ sql/01_schema.sql        테이블 3개  ← 00 다음에 실행할 것
 sql/03_manhole.sql       맨홀 CSV 적재 + 15m 스냅
 sql/04_risk.sql          위험도 배치
 sql/05_route.sql         경로 탐색 함수
+sql/06_keyring.sql       진동 키링용 경고 맨홀 뷰
 ```
 
 `01_schema.sql` 은 `ways` 를 참조하므로 **반드시 `00` 뒤에** 실행한다.
@@ -124,6 +125,17 @@ SELECT * FROM route_summary(127.0466, 37.7382, 127.0468, 37.7183, 100);
 SELECT * FROM route_summary(127.0466,37.7382, 127.0468,37.7183,
                             alert_freq := 100, w100 := 3.5);
 ```
+
+### 진동 키링
+
+침수 위험 맨홀 근처에서 진동하는 키링이 붙는다. 앱이 이 목록을 통째로 받아
+폰에 저장하고 **오프라인으로** 근접 판정을 한다.
+
+```sql
+SELECT * FROM warning_manhole;   -- 5,975개 · 약 140KB
+```
+
+제작 방법은 [`keyring/README.md`](keyring/README.md) 참고.
 
 ## 데이터는 이 저장소에 없다
 
