@@ -28,3 +28,9 @@ desktop.ini
 .idea/
 ~$*
 *.tmp
+
+# 파이썬
+__pycache__/
+*.pyc
+.venv/
+venv/

@@ -33,7 +33,8 @@ cost = length_m × (1 + w_flood + w_manhole)
 | 4 맨홀 적재 | 완료 — 20,873개, 스냅률 94.9% |
 | 5 위험도 계산 | 완료 — 9,690구간 |
 | 6 경로 탐색 함수 | 완료 |
-| 7 API 서버 · 앱 | **여기부터** |
+| 7 API 서버 | 완료 — `api/` · FastAPI |
+| 앱 | **여기부터** |
 
 실측: 엣지 39,490 / 노드 29,744 / 2,760km · 경로 탐색 37ms
 
@@ -125,6 +126,20 @@ SELECT * FROM route_summary(127.0466, 37.7382, 127.0468, 37.7183, 100);
 SELECT * FROM route_summary(127.0466,37.7382, 127.0468,37.7183,
                             alert_freq := 100, w100 := 3.5);
 ```
+
+### API 서버
+
+```powershell
+docker start flood-db
+cd api; pip install -r requirements.txt; uvicorn main:app --reload
+```
+
+```
+POST /v1/routes            경로 탐색
+GET  /v1/warning-manholes  키링용 위험 맨홀 전체 목록
+```
+
+자세한 건 [`api/README.md`](api/README.md).
 
 ### 진동 키링
 
